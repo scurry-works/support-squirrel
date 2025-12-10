@@ -9,29 +9,36 @@ GUILD_ID = 905167903224123473
 OWNER_ID = 582648847881338961
 VERIFY_CHANNEL_ID = 1440890196517326930
 WELCOME_CHANNEL_ID = 1440890422481129546
-ACORN_EMOJI_ID = 1440879841334268028
+ACORN_EMOJI_ID = 1400922547679264768
 MEMBER_ROLE_ID = 1046627142345170984
 
 from scurrypy.addons.easy_bot import EasyBot
 from scurrypy.addons.embed_builder import EmbedBuilder as E
 
 class MyBot(EasyBot):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self):
+        super().__init__(
+            token=TOKEN,
+            application_id=APPLICATION_ID,
+            prefix='!',
+            intents=scurrypy.Intents.set(
+                message_content=True, 
+                guild_members=True, 
+                guild_message_reactions=True,
+                guild_emojis_and_stickers=True
+            ),
+            guild_emojis=True,
+            bot_emojis=True
+        )
 
-        self.bot_emojis = self.bot_emojis()
         self.bot_user = self.application(APPLICATION_ID)
 
-client = MyBot(
-    token=TOKEN, 
-    application_id=APPLICATION_ID, 
-    prefix='!',
-    intents=scurrypy.set_intents(
-        message_content=True,
-        guild_members=True,
-        guild_message_reactions=True
-    )
-)
+client = MyBot()
+
+@client.start_hook
+async def on_start(bot: MyBot):
+    app = await bot.bot_user.fetch()
+    bot.bot_user = app.bot
 
 @client.prefix('rules')
 async def on_build_rules(bot: MyBot, msg: scurrypy.Message):
@@ -40,7 +47,7 @@ async def on_build_rules(bot: MyBot, msg: scurrypy.Message):
     if event.author.id != OWNER_ID:
         return
     
-    flaming_acorn = bot.bot_emojis.get_emoji('flaming_acorn').mention
+    flaming_acorn = bot.get_bot_emoji('flaming_acorn').mention
 
     embed = scurrypy.EmbedPart(
         author=E.user_author(bot.bot_user),
@@ -99,10 +106,11 @@ async def on_build_verify(bot: MyBot, msg: scurrypy.Message):
         )
     )
 
-    await bot.message(resp.channel_id, resp.id).add_reaction(bot.bot_emojis.get_emoji('acorn'))
+    await bot.message(resp.channel_id, resp.id).add_reaction(bot.get_guild_emoji(ACORN_EMOJI_ID))
 
 @client.event("MESSAGE_REACTION_ADD")
 async def on_verify(bot: MyBot, event: scurrypy.ReactionAddEvent):
+
     # if correct channel and emoji and NOT the bot...
     if event.channel_id != VERIFY_CHANNEL_ID:
         return
@@ -114,7 +122,7 @@ async def on_verify(bot: MyBot, event: scurrypy.ReactionAddEvent):
     # remove reaction
     msg: scurrypy.Message = bot.message(event.channel_id, event.message_id)
 
-    await msg.remove_user_reaction(bot.bot_emojis.get_emoji('acorn'), event.user_id)
+    await msg.remove_user_reaction(bot.get_guild_emoji(ACORN_EMOJI_ID), event.user_id)
 
     # add Member role to user
     guild: scurrypy.Guild = bot.guild(GUILD_ID)
@@ -125,8 +133,8 @@ async def on_verify(bot: MyBot, event: scurrypy.ReactionAddEvent):
 async def on_welcome(bot: MyBot, event: scurrypy.GuildMemberAddEvent):
     channel: scurrypy.Channel = bot.channel(WELCOME_CHANNEL_ID)
 
-    acorn = bot.bot_emojis.get_emoji('acorn').mention
-    bullet = bot.bot_emojis.get_emoji('bullet').mention
+    acorn = bot.get_bot_emoji('acorn').mention
+    bullet = bot.get_bot_emoji('bullet').mention
 
     embed = scurrypy.EmbedPart(
         author=E.user_author(bot.bot_user),
@@ -152,14 +160,5 @@ async def on_welcome(bot: MyBot, event: scurrypy.GuildMemberAddEvent):
             attachments=attachments
         )
     )
-
-@client.event('READY')
-async def on_ready(bot: MyBot, event: scurrypy.ReadyEvent):
-    await bot.bot_emojis.fetch_all()
-    bot.logger.log_info("Bot emojis loaded!")
-    
-    app = await bot.bot_user.fetch()
-    bot.bot_user = app.bot
-    bot.logger.log_info("Bot Info ready!")
 
 client.run()
