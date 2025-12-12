@@ -12,10 +12,9 @@ WELCOME_CHANNEL_ID = 1440890422481129546
 ACORN_EMOJI_ID = 1400922547679264768
 MEMBER_ROLE_ID = 1046627142345170984
 
-from scurrypy.addons.easy_bot import EasyBot
-from scurrypy.addons.embed_builder import EmbedBuilder as E
+from scurry_kit import ScurryKit, EmbedBuilder as E
 
-class MyBot(EasyBot):
+class MyBot(ScurryKit):
     def __init__(self):
         super().__init__(
             token=TOKEN,
@@ -27,8 +26,8 @@ class MyBot(EasyBot):
                 guild_message_reactions=True,
                 guild_emojis_and_stickers=True
             ),
-            guild_emojis=True,
-            bot_emojis=True
+            guild_emojis=True, # for reaction verification
+            bot_emojis=True # for embed building
         )
 
         self.bot_user = self.application(APPLICATION_ID)
@@ -106,7 +105,9 @@ async def on_build_verify(bot: MyBot, msg: scurrypy.Message):
         )
     )
 
-    await bot.message(resp.channel_id, resp.id).add_reaction(bot.get_guild_emoji(ACORN_EMOJI_ID))
+    resp_msg = bot.message(resp.channel_id, resp.id)
+
+    await resp_msg.add_reaction(bot.get_guild_emoji(ACORN_EMOJI_ID))
 
 @client.event("MESSAGE_REACTION_ADD")
 async def on_verify(bot: MyBot, event: scurrypy.ReactionAddEvent):
@@ -125,7 +126,7 @@ async def on_verify(bot: MyBot, event: scurrypy.ReactionAddEvent):
     await msg.remove_user_reaction(bot.get_guild_emoji(ACORN_EMOJI_ID), event.user_id)
 
     # add Member role to user
-    guild: scurrypy.Guild = bot.guild(GUILD_ID)
+    guild = bot.guild(GUILD_ID)
 
     await guild.add_guild_member_role(event.user_id, MEMBER_ROLE_ID)
 
