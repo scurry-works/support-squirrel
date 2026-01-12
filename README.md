@@ -1,6 +1,6 @@
 # Support Squirrel
 
-A Discord support bot example built with [scurrypy](https://github.com/Scurry-Collective/scurrypy).
+A Discord support bot example built with [scurrypy](https://github.com/scurry-works/scurrypy).
 
 ## Note
 This is a **reference implementation** showing how to build a support bot with scurrypy. 
