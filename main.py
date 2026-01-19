@@ -17,7 +17,7 @@ from scurrypy import (
     EventTypes, 
     MessageCreateEvent, Message,
     ReactionAddEvent, GuildMemberAddEvent,
-    MessagePart, Attachment,
+    MessagePart,
     EmbedPart, EmbedThumbnail, EmbedImage, EmbedField, EmbedFooter
 )
 
@@ -73,7 +73,7 @@ async def on_build_rules(bot: Client, msg: Message):
 
     embed = EmbedPart(
         author=E.user_author(bot_user.user),
-        thumbnail=EmbedThumbnail("attachment://rules_book.png"),
+        thumbnail=EmbedThumbnail("https://raw.githubusercontent.com/scurry-works/support-squirrel/refs/heads/main/assets/rules_book.png"),
         description="Before we get started, let's establish some rules.",
         fields=[
             EmbedField(f"{flaming_acorn} Respect",
@@ -86,20 +86,10 @@ async def on_build_rules(bot: Client, msg: Message):
                 "**Kick -> Mute -> Ban** is generally followed depending on severity.")
         ],
         footer=EmbedFooter("These rules are subject to change!", 
-            "attachment://alert.png")
+            "https://raw.githubusercontent.com/scurry-works/support-squirrel/refs/heads/main/assets/alert.png")
     )
 
-    attachments = [
-        Attachment('assets/rules_book.png', 'rules'),
-        Attachment('assets/alert.png', 'warn')
-    ]
-
-    await msg.send(
-        MessagePart(
-            embeds=[embed], 
-            attachments=attachments
-        )
-    )
+    await msg.send(MessagePart(embeds=[embed]))
 
 @prefixes.listen('verify')
 async def on_build_verify(bot: Client, msg: Message):
@@ -113,20 +103,11 @@ async def on_build_verify(bot: Client, msg: Message):
     embed = EmbedPart(
         title='Verify',
         author=E.user_author(bot.bot_user),
-        thumbnail=EmbedThumbnail("attachment://plus.png"),
+        thumbnail=EmbedThumbnail("https://raw.githubusercontent.com/scurry-works/support-squirrel/refs/heads/main/assets/plus.png"),
         description="By reacting to this message, you agree to the rules."
     )
 
-    attachments=[
-        Attachment('assets/plus.png', 'plus')
-    ]
-
-    resp = await msg.send(
-        MessagePart(
-            embeds=[embed],
-            attachments=attachments
-        )
-    )
+    resp = await msg.send(MessagePart(embeds=[embed]))
 
     resp_msg = bot.message(resp.channel_id, resp.id)
 
@@ -160,28 +141,26 @@ async def on_welcome(bot: Client, event: GuildMemberAddEvent):
     acorn = bot_emojis.get_emoji('acorn').mention
     bullet = bot_emojis.get_emoji('bullet').mention
 
+    import random
+
+    select_thumb = random.choice(['bookie', 'pirate', 'wizard'])
+
     embed = EmbedPart(
         author=E.user_author(bot.bot_user),
         title=f"Welcome, {event.user.username}!",
-        thumbnail=EmbedThumbnail("attachment://bookie.png"),
+        thumbnail=EmbedThumbnail(f"https://raw.githubusercontent.com/scurry-works/support-squirrel/refs/heads/main/assets/{select_thumb}.png"),
         description=f"""
             {bullet} Read the rules in <#1046640388456321126>
             {bullet} Verify in <#1440890196517326930>
             {bullet} Hope you enjoy the bot!
         """,
-        image=EmbedImage('attachment://welcome.gif')
+        image=EmbedImage('https://raw.githubusercontent.com/scurry-works/support-squirrel/refs/heads/main/assets/welcome.gif')
     )
-
-    attachments=[
-        Attachment("assets/bookie.png", 'bookie'),
-        Attachment("assets/welcome.gif", 'welcome')
-    ]
 
     await channel.send(
         MessagePart(
             content=f"{acorn} <@{event.user.id}> *has stumbled upon a community of squirrels!* {acorn}",
-            embeds=[embed],
-            attachments=attachments
+            embeds=[embed]
         )
     )
 
