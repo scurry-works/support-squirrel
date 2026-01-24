@@ -15,7 +15,7 @@ MEMBER_ROLE_ID = 1046627142345170984
 from scurrypy import (
     Client, Intents, 
     EventTypes, 
-    MessageCreateEvent, Message,
+    MessageCreateEvent, Channel,
     ReactionAddEvent, GuildMemberAddEvent,
     MessagePart,
     EmbedPart, EmbedThumbnail, EmbedImage, EmbedField, EmbedFooter
@@ -63,8 +63,8 @@ guild_emojis = GuildEmojiCacheAddon(client)
 bot_emojis = BotEmojisCacheAddon(client, APPLICATION_ID)
 
 @prefixes.listen('rules')
-async def on_build_rules(bot: Client, msg: Message):
-    event: MessageCreateEvent = msg.context
+async def on_build_rules(bot: Client, channel: Channel):
+    event: MessageCreateEvent = channel.context
 
     if event.author.id != OWNER_ID:
         return
@@ -89,11 +89,11 @@ async def on_build_rules(bot: Client, msg: Message):
             "https://raw.githubusercontent.com/scurry-works/support-squirrel/refs/heads/main/assets/alert.png")
     )
 
-    await msg.send(MessagePart(embeds=[embed]))
+    await channel.send(MessagePart(embeds=[embed]))
 
 @prefixes.listen('verify')
-async def on_build_verify(bot: Client, msg: Message):
-    event: MessageCreateEvent = msg.context
+async def on_build_verify(bot: Client, channel: Channel):
+    event: MessageCreateEvent = channel.context
 
     if event.author.id != OWNER_ID:
         return
@@ -107,7 +107,7 @@ async def on_build_verify(bot: Client, msg: Message):
         description="By reacting to this message, you agree to the rules."
     )
 
-    resp = await msg.send(MessagePart(embeds=[embed]))
+    resp = await channel.send(MessagePart(embeds=[embed]))
 
     resp_msg = bot.message(resp.channel_id, resp.id)
 
@@ -132,7 +132,7 @@ async def on_verify(bot: Client, event: ReactionAddEvent):
     # add Member role to user
     guild = bot.guild(GUILD_ID)
 
-    await guild.add_guild_member_role(event.user_id, MEMBER_ROLE_ID)
+    await guild.add_member_role(event.user_id, MEMBER_ROLE_ID)
 
 @events.listen(EventTypes.GUILD_MEMBER_ADD)
 async def on_welcome(bot: Client, event: GuildMemberAddEvent):
@@ -146,7 +146,7 @@ async def on_welcome(bot: Client, event: GuildMemberAddEvent):
     select_thumb = random.choice(['bookie', 'pirate', 'wizard'])
 
     embed = EmbedPart(
-        author=E.user_author(bot.bot_user),
+        author=E.user_author(bot_user.user),
         title=f"Welcome, {event.user.username}!",
         thumbnail=EmbedThumbnail(f"https://raw.githubusercontent.com/scurry-works/support-squirrel/refs/heads/main/assets/{select_thumb}.png"),
         description=f"""
