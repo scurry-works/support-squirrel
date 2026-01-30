@@ -18,7 +18,7 @@ from scurrypy import (
     MessageCreateEvent, Channel,
     ReactionAddEvent, GuildMemberAddEvent,
     MessagePart,
-    EmbedPart, EmbedThumbnail, EmbedImage, EmbedField, EmbedFooter
+    EmbedPart, EmbedThumbnailPart, EmbedImagePart, EmbedFieldPart, EmbedFooterPart
 )
 
 from scurry_kit import (
@@ -73,19 +73,19 @@ async def on_build_rules(bot: Client, channel: Channel):
 
     embed = EmbedPart(
         author=E.user_author(bot_user.user),
-        thumbnail=EmbedThumbnail("https://raw.githubusercontent.com/scurry-works/support-squirrel/refs/heads/main/assets/rules_book.png"),
+        thumbnail=EmbedThumbnailPart("https://raw.githubusercontent.com/scurry-works/support-squirrel/refs/heads/main/assets/rules_book.png"),
         description="Before we get started, let's establish some rules.",
         fields=[
-            EmbedField(f"{flaming_acorn} Respect",
+            EmbedFieldPart(f"{flaming_acorn} Respect",
                 "Please treat others with respect and be mindful of the things you say."),
-            EmbedField(f"{flaming_acorn} Content",
+            EmbedFieldPart(f"{flaming_acorn} Content",
                 "No malicious or NSFW content, advertising, spam, or discussion of charged topics."),
-            EmbedField(f"{flaming_acorn} Bot Policy",
+            EmbedFieldPart(f"{flaming_acorn} Bot Policy",
                 "If you have any questions, feel free to post it in <#1195785157177782292>."),
-            EmbedField(f"{flaming_acorn} Warning Policy",
+            EmbedFieldPart(f"{flaming_acorn} Warning Policy",
                 "**Kick -> Mute -> Ban** is generally followed depending on severity.")
         ],
-        footer=EmbedFooter("These rules are subject to change!", 
+        footer=EmbedFooterPart("These rules are subject to change!", 
             "https://raw.githubusercontent.com/scurry-works/support-squirrel/refs/heads/main/assets/alert.png")
     )
 
@@ -103,7 +103,7 @@ async def on_build_verify(bot: Client, channel: Channel):
     embed = EmbedPart(
         title='Verify',
         author=E.user_author(bot.bot_user),
-        thumbnail=EmbedThumbnail("https://raw.githubusercontent.com/scurry-works/support-squirrel/refs/heads/main/assets/plus.png"),
+        thumbnail=EmbedThumbnailPart("https://raw.githubusercontent.com/scurry-works/support-squirrel/refs/heads/main/assets/plus.png"),
         description="By reacting to this message, you agree to the rules."
     )
 
@@ -148,13 +148,13 @@ async def on_welcome(bot: Client, event: GuildMemberAddEvent):
     embed = EmbedPart(
         author=E.user_author(bot_user.user),
         title=f"Welcome, {event.user.username}!",
-        thumbnail=EmbedThumbnail(f"https://raw.githubusercontent.com/scurry-works/support-squirrel/refs/heads/main/assets/{select_thumb}.png"),
+        thumbnail=EmbedThumbnailPart(f"https://raw.githubusercontent.com/scurry-works/support-squirrel/refs/heads/main/assets/{select_thumb}.png"),
         description=f"""
             {bullet} Read the rules in <#1046640388456321126>
             {bullet} Verify in <#1440890196517326930>
             {bullet} Hope you enjoy the bot!
         """,
-        image=EmbedImage('https://raw.githubusercontent.com/scurry-works/support-squirrel/refs/heads/main/assets/welcome.gif')
+        image=EmbedImagePart('https://raw.githubusercontent.com/scurry-works/support-squirrel/refs/heads/main/assets/welcome.gif')
     )
 
     await channel.send(
