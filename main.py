@@ -3,20 +3,22 @@ import os, dotenv
 dotenv.load_dotenv()
 
 TOKEN = os.getenv('DISCORD_TOKEN')
+PROJECT_ID = os.getenv('PROJECT_ID')
 APPLICATION_ID = 1440875315608948899
 GUILD_ID = 905167903224123473
 
 OWNER_ID = 582648847881338961
 VERIFY_CHANNEL_ID = 1440890196517326930
 WELCOME_CHANNEL_ID = 1440890422481129546
+DOWNLOADS_CHANNEL_ID = 1468694348517347624
 ACORN_EMOJI_ID = 1400922547679264768
 MEMBER_ROLE_ID = 1046627142345170984
 
 from scurrypy import (
     Client, Intents, 
     EventTypes, 
-    MessageCreateEvent, Channel,
-    ReactionAddEvent, GuildMemberAddEvent,
+    MessageCreateEvent, Channel, UserModel,
+    ReactionAddEvent, GuildMemberAddEvent, ReadyEvent,
     MessagePart,
     EmbedPart, EmbedThumbnailPart, EmbedImagePart, EmbedFieldPart, EmbedFooterPart
 )
@@ -31,16 +33,51 @@ from scurry_kit import (
 
 logger = setup_default_logger()
 
+from google.cloud import bigquery
+from google.cloud import bigquery_storage
+
+import asyncio
+
 class BotUser:
     """Quick helper for fetching bot user on startup."""
     
     def __init__(self, client: Client):
-        self.user = client.application(APPLICATION_ID)
+        self.user: UserModel = None
 
-        client.add_startup_hook(self.init_bot_user)
+        client.add_event_listener(EventTypes.READY, self.init_bot_user)
 
-    async def init_bot_user(self):
-        self.user = await self.user.fetch()
+    async def init_bot_user(self, event: ReadyEvent):
+        self.user = event.user
+
+class ScurryPyDownloads:
+    def __init__(self, client: Client, channel_id: int):
+        self.bot = client
+        self.update_channel_id = channel_id
+
+        self.bq = bigquery.Client(project=PROJECT_ID)
+        self.bqs = bigquery_storage.BigQueryReadClient()
+
+        client.add_startup_hook(self.on_start)
+
+    async def on_start(self):
+        asyncio.create_task(self.track_downloads())
+
+    async def track_downloads(self):
+        while True:
+            job = self.bq.query("""
+                SELECT COUNT(*) AS num
+                FROM `bigquery-public-data.pypi.file_downloads`
+                WHERE file.project = 'scurrypy'
+                -- Only query the last 30 days of history
+                AND DATE(timestamp)
+                    BETWEEN DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
+                    AND CURRENT_DATE()
+                """)
+            query = job.to_dataframe(bqstorage_client=self.bqs).to_dict(orient='records')[0]
+            count = query['num']
+            await self.bot.channel(self.update_channel_id).edit_guild_channel(name=f"Downloads: {count}")
+            logger.info("Channel updated!")
+            await asyncio.sleep(60*15)
 
 client = Client(
     token=TOKEN,
@@ -48,7 +85,7 @@ client = Client(
         message_content=True, 
         guild_members=True, 
         guild_message_reactions=True,
-        guild_emojis_and_stickers=True
+        guild_expressions=True
     )
 )
 
@@ -57,6 +94,7 @@ bot_user = BotUser(client)
 # addons
 events = EventsAddon(client)
 prefixes = PrefixAddon(client, APPLICATION_ID, '!')
+ScurryPyDownloads(client, DOWNLOADS_CHANNEL_ID)
 
 # caches 
 guild_emojis = GuildEmojiCacheAddon(client)
