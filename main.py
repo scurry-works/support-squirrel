@@ -3,7 +3,6 @@ import os, dotenv
 dotenv.load_dotenv()
 
 TOKEN = os.getenv('DISCORD_TOKEN')
-PROJECT_ID = os.getenv('PROJECT_ID')
 APPLICATION_ID = 1440875315608948899
 GUILD_ID = 905167903224123473
 
@@ -34,7 +33,6 @@ from scurry_kit import (
 logger = setup_default_logger()
 
 from google.cloud import bigquery
-from google.cloud import bigquery_storage
 
 import asyncio
 
@@ -54,30 +52,41 @@ class ScurryPyDownloads:
         self.bot = client
         self.update_channel_id = channel_id
 
-        self.bq = bigquery.Client(project=PROJECT_ID)
-        self.bqs = bigquery_storage.BigQueryReadClient()
+        self.bq = bigquery.Client(project="scurrypy")
 
         client.add_startup_hook(self.on_start)
 
     async def on_start(self):
         asyncio.create_task(self.track_downloads())
 
-    async def track_downloads(self):
-        while True:
-            job = self.bq.query("""
+    async def fetch_count(self) -> int:
+        def _run():
+            rows = self.bq.query("""
                 SELECT COUNT(*) AS num
                 FROM `bigquery-public-data.pypi.file_downloads`
                 WHERE file.project = 'scurrypy'
-                -- Only query the last 30 days of history
                 AND DATE(timestamp)
                     BETWEEN DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
                     AND CURRENT_DATE()
-                """)
-            query = job.to_dataframe(bqstorage_client=self.bqs).to_dict(orient='records')[0]
-            count = query['num']
-            await self.bot.channel(self.update_channel_id).edit_guild_channel(name=f"Downloads: {count}")
-            logger.info("Channel updated!")
-            await asyncio.sleep(60*15)
+            """).result()
+            count = list(rows)[0]
+            return count.num
+
+        return await asyncio.to_thread(_run)
+
+    async def track_downloads(self):
+        await asyncio.sleep(10) # buffer time
+        while True:
+            try:
+                count = await self.fetch_count()
+                await self.bot.channel(self.update_channel_id).edit_guild_channel(
+                    name=f"Downloads: {count}"
+                )
+                logger.info("Channel updated!")
+            except Exception:
+                logger.exception("Failed to update downloads channel")
+
+            await asyncio.sleep(60 * 15) # wait 15 minutes
 
 client = Client(
     token=TOKEN,
