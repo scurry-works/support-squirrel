@@ -48,9 +48,8 @@ class BotUser:
         self.user = event.user
 
 class ScurryPyDownloads:
-    def __init__(self, client: Client, channel_id: int):
+    def __init__(self, client: Client):
         self.bot = client
-        self.update_channel_id = channel_id
 
         self.bq = bigquery.Client(project="scurrypy")
 
@@ -79,7 +78,7 @@ class ScurryPyDownloads:
         while True:
             try:
                 count = await self.fetch_count()
-                await self.bot.channel(self.update_channel_id).edit_guild_channel(
+                await self.bot.channel(DOWNLOADS_CHANNEL_ID).edit_guild_channel(
                     name=f"Downloads: {count}"
                 )
                 logger.info("Channel updated!")
@@ -103,7 +102,7 @@ bot_user = BotUser(client)
 # addons
 events = EventsAddon(client)
 prefixes = PrefixAddon(client, APPLICATION_ID, '!')
-ScurryPyDownloads(client, DOWNLOADS_CHANNEL_ID)
+ScurryPyDownloads(client)
 
 # caches 
 guild_emojis = GuildEmojiCacheAddon(client)
