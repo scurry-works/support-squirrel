@@ -103,7 +103,7 @@ bot_user = BotUser(client)
 # addons
 events = EventsAddon(client)
 prefixes = PrefixAddon(client, APPLICATION_ID, '!')
-# ScurryPyDownloads(client)
+ScurryPyDownloads(client)
 
 # caches 
 guild_emojis = GuildEmojiCacheAddon(client)
