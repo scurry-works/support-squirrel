@@ -3,24 +3,25 @@ import os, dotenv
 dotenv.load_dotenv()
 
 TOKEN = os.getenv('DISCORD_TOKEN')
-APPLICATION_ID = 1440875315608948899
-GUILD_ID = 905167903224123473
-
-OWNER_ID = 582648847881338961
-VERIFY_CHANNEL_ID = 1440890196517326930
-WELCOME_CHANNEL_ID = 1440890422481129546
-DOWNLOADS_CHANNEL_ID = 1468694348517347624
-ACORN_EMOJI_ID = 1400922547679264768
-MEMBER_ROLE_ID = 1046627142345170984
 
 from scurrypy import (
-    Client, Intents, 
+    Client, Intents, Snowflake,
     EventTypes, 
     MessageCreateEvent, Channel, UserModel,
     ReactionAddEvent, GuildMemberAddEvent, ReadyEvent,
     MessagePart,
     EmbedPart, EmbedThumbnailPart, EmbedImagePart, EmbedFieldPart, EmbedFooterPart
 )
+
+APPLICATION_ID = Snowflake(1440875315608948899)
+GUILD_ID = Snowflake(905167903224123473)
+
+OWNER_ID = Snowflake(582648847881338961)
+VERIFY_CHANNEL_ID = Snowflake(1440890196517326930)
+WELCOME_CHANNEL_ID = Snowflake(1440890422481129546)
+DOWNLOADS_CHANNEL_ID = Snowflake(1468694348517347624)
+ACORN_EMOJI_ID = Snowflake(1400922547679264768)
+MEMBER_ROLE_ID = Snowflake(1046627142345170984)
 
 from scurry_kit import (
     EmbedBuilder as E, 
@@ -102,7 +103,7 @@ bot_user = BotUser(client)
 # addons
 events = EventsAddon(client)
 prefixes = PrefixAddon(client, APPLICATION_ID, '!')
-ScurryPyDownloads(client)
+# ScurryPyDownloads(client)
 
 # caches 
 guild_emojis = GuildEmojiCacheAddon(client)
@@ -127,7 +128,7 @@ async def on_build_rules(bot: Client, channel: Channel):
             EmbedFieldPart(f"{flaming_acorn} Content",
                 "No malicious or NSFW content, advertising, spam, or discussion of charged topics."),
             EmbedFieldPart(f"{flaming_acorn} Bot Policy",
-                "If you have any questions, feel free to post it in <#1195785157177782292>."),
+                "If you have any questions, feel free to post it in <#1459655310150074368>."),
             EmbedFieldPart(f"{flaming_acorn} Warning Policy",
                 "**Kick -> Mute -> Ban** is generally followed depending on severity.")
         ],
