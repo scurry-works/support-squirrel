@@ -5,7 +5,7 @@ dotenv.load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 
 from scurrypy import (
-    Client, Intents, Snowflake,
+    Client, Intents,
     EventTypes, 
     MessageCreateEvent, Channel, UserModel,
     ReactionAddEvent, GuildMemberAddEvent, ReadyEvent,
@@ -13,15 +13,15 @@ from scurrypy import (
     EmbedPart, EmbedThumbnailPart, EmbedImagePart, EmbedFieldPart, EmbedFooterPart
 )
 
-APPLICATION_ID = Snowflake(1440875315608948899)
-GUILD_ID = Snowflake(905167903224123473)
+APPLICATION_ID = 1440875315608948899
+GUILD_ID = 905167903224123473
 
-OWNER_ID = Snowflake(582648847881338961)
-VERIFY_CHANNEL_ID = Snowflake(1440890196517326930)
-WELCOME_CHANNEL_ID = Snowflake(1440890422481129546)
-DOWNLOADS_CHANNEL_ID = Snowflake(1468694348517347624)
-ACORN_EMOJI_ID = Snowflake(1400922547679264768)
-MEMBER_ROLE_ID = Snowflake(1046627142345170984)
+OWNER_ID = 582648847881338961
+VERIFY_CHANNEL_ID = 1440890196517326930
+WELCOME_CHANNEL_ID = 1440890422481129546
+DOWNLOADS_CHANNEL_ID = 1468694348517347624
+ACORN_EMOJI_ID = 1400922547679264768
+MEMBER_ROLE_ID = 1046627142345170984
 
 from scurry_kit import (
     EmbedBuilder as E, 
@@ -68,6 +68,9 @@ class ScurryPyDownloads:
                 AND DATE(timestamp)
                     BETWEEN DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
                     AND CURRENT_DATE()
+                AND details.installer.name IN ('pip', 'uv', 'poetry', 'pipenv')
+                -- filter out obvious bots/mirrors
+                AND details.installer.name IS NOT NULL;
             """).result()
             count = list(rows)[0]
             return count.num
