@@ -48,49 +48,6 @@ class BotUser:
     async def init_bot_user(self, event: ReadyEvent):
         self.user = event.user
 
-class ScurryPyDownloads:
-    def __init__(self, client: Client):
-        self.bot = client
-
-        self.bq = bigquery.Client(project="scurrypy")
-
-        client.add_startup_hook(self.on_start)
-
-    async def on_start(self):
-        asyncio.create_task(self.track_downloads())
-
-    async def fetch_count(self) -> int:
-        def _run():
-            rows = self.bq.query("""
-                SELECT COUNT(*) AS num
-                FROM `bigquery-public-data.pypi.file_downloads`
-                WHERE file.project = 'scurrypy'
-                AND DATE(timestamp)
-                    BETWEEN DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
-                    AND CURRENT_DATE()
-                AND details.installer.name IN ('pip', 'uv', 'poetry', 'pipenv')
-                -- filter out obvious bots/mirrors
-                AND details.installer.name IS NOT NULL;
-            """).result()
-            count = list(rows)[0]
-            return count.num
-
-        return await asyncio.to_thread(_run)
-
-    async def track_downloads(self):
-        await asyncio.sleep(10) # buffer time
-        while True:
-            try:
-                count = await self.fetch_count()
-                await self.bot.channel(DOWNLOADS_CHANNEL_ID).edit_guild_channel(
-                    name=f"Downloads: {count}"
-                )
-                logger.info("Channel updated!")
-            except Exception:
-                logger.exception("Failed to update downloads channel")
-
-            await asyncio.sleep(60 * 15) # wait 15 minutes
-
 client = Client(
     token=TOKEN,
     intents=Intents.set(
@@ -106,7 +63,6 @@ bot_user = BotUser(client)
 # addons
 events = EventsAddon(client)
 prefixes = PrefixAddon(client, APPLICATION_ID, '!')
-ScurryPyDownloads(client)
 
 # caches 
 guild_emojis = GuildEmojiCacheAddon(client)
