@@ -33,10 +33,6 @@ from scurry_kit import (
 
 logger = setup_default_logger()
 
-from google.cloud import bigquery
-
-import asyncio
-
 class BotUser:
     """Quick helper for fetching bot user on startup."""
     
