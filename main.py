@@ -1,18 +1,9 @@
-import os, dotenv
+# --- Environment setup ---
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
-dotenv.load_dotenv()
-
-TOKEN = os.getenv('DISCORD_TOKEN')
-
-from scurrypy import (
-    Client, Intents,
-    EventTypes, 
-    MessageCreateEvent, Channel, UserModel,
-    ReactionAddEvent, GuildMemberAddEvent, ReadyEvent,
-    MessagePart,
-    EmbedPart, EmbedThumbnailPart, EmbedImagePart, EmbedFieldPart, EmbedFooterPart
-)
-
+TOKEN = os.getenv("SUPPORT_TOKEN")
 APPLICATION_ID = 1440875315608948899
 GUILD_ID = 905167903224123473
 
@@ -23,15 +14,27 @@ DOWNLOADS_CHANNEL_ID = 1468694348517347624
 ACORN_EMOJI_ID = 1400922547679264768
 MEMBER_ROLE_ID = 1046627142345170984
 
-from scurry_kit import (
-    EmbedBuilder as E, 
-    PrefixAddon,
-    EventsAddon,
-    GuildEmojiCacheAddon, BotEmojisCacheAddon,
-    setup_default_logger
+import logging
+from rich.logging import RichHandler
+
+logger = logging.getLogger("scurrypy")
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(message)s",
+    datefmt="[%X]",
+    handlers=[RichHandler(show_path=False, rich_tracebacks=True)],
 )
 
-logger = setup_default_logger()
+from scurrypy import Client, Intents
+from scurrypy.enums import EventType
+from scurrypy.api.user import UserModel
+from scurrypy.api.messages import MessagePart, Embed, EmbedThumbnail, EmbedImage, EmbedField, EmbedFooter
+from scurrypy.events import ReactionAddEvent, GuildMemberAddEvent, ReadyEvent
+
+from scurrypy.ext.events import EventsAddon
+from scurrypy.ext.prefixes import PrefixAddon, PrefixCommandContext
+from scurrypy.ext.cache import GuildEmojiCacheAddon, ApplicationEmojisCacheAddon
 
 class BotUser:
     """Quick helper for fetching bot user on startup."""
@@ -39,83 +42,79 @@ class BotUser:
     def __init__(self, client: Client):
         self.user: UserModel = None
 
-        client.add_event_listener(EventTypes.READY, self.init_bot_user)
+        client.add_event_listener(EventType.READY, self.init_bot_user)
 
     async def init_bot_user(self, event: ReadyEvent):
         self.user = event.user
 
 client = Client(
     token=TOKEN,
-    intents=Intents.set(
-        message_content=True, 
-        guild_members=True, 
-        guild_message_reactions=True,
-        guild_expressions=True
+    intents=(
+        Intents.DEFAULT | 
+        Intents.MESSAGE_CONTENT | 
+        Intents.GUILD_MEMBERS | 
+        Intents.GUILD_MESSAGE_REACTIONS | 
+        Intents.GUILD_EXPRESSIONS
     )
 )
 
 bot_user = BotUser(client)
 
-# addons
 events = EventsAddon(client)
 prefixes = PrefixAddon(client, APPLICATION_ID, '!')
 
-# caches 
 guild_emojis = GuildEmojiCacheAddon(client)
-bot_emojis = BotEmojisCacheAddon(client, APPLICATION_ID)
+app_emojis = ApplicationEmojisCacheAddon(client, APPLICATION_ID)
 
 @prefixes.listen('rules')
-async def on_build_rules(bot: Client, channel: Channel):
-    event: MessageCreateEvent = channel.context
-
-    if event.author.id != OWNER_ID:
+async def on_build_rules(ctx: PrefixCommandContext):
+    
+    if ctx.author.id != OWNER_ID:
         return
     
-    flaming_acorn = bot_emojis.get_emoji('flaming_acorn').mention
+    flaming_acorn = app_emojis.get_emoji('flaming_acorn').mention
 
-    embed = EmbedPart(
-        author=E.user_author(bot_user.user),
-        thumbnail=EmbedThumbnailPart("https://raw.githubusercontent.com/scurry-works/support-squirrel/refs/heads/main/assets/rules_book.png"),
+    embed = Embed(
+        thumbnail=EmbedThumbnail("https://raw.githubusercontent.com/scurry-works/support-squirrel/refs/heads/main/assets/rules_book.png"),
         description="Before we get started, let's establish some rules.",
         fields=[
-            EmbedFieldPart(f"{flaming_acorn} Respect",
+            EmbedField(f"{flaming_acorn} Respect",
                 "Please treat others with respect and be mindful of the things you say."),
-            EmbedFieldPart(f"{flaming_acorn} Content",
+            EmbedField(f"{flaming_acorn} Content",
                 "No malicious or NSFW content, advertising, spam, or discussion of charged topics."),
-            EmbedFieldPart(f"{flaming_acorn} Bot Policy",
+            EmbedField(f"{flaming_acorn} Bot Policy",
                 "If you have any questions, feel free to post it in <#1459655310150074368>."),
-            EmbedFieldPart(f"{flaming_acorn} Warning Policy",
+            EmbedField(f"{flaming_acorn} Warning Policy",
                 "**Kick -> Mute -> Ban** is generally followed depending on severity.")
         ],
-        footer=EmbedFooterPart("These rules are subject to change!", 
+        footer=EmbedFooter("These rules are subject to change!", 
             "https://raw.githubusercontent.com/scurry-works/support-squirrel/refs/heads/main/assets/alert.png")
     )
 
-    await channel.send(MessagePart(embeds=[embed]))
+    embed.set_user_author(ctx.author)
+
+    await ctx.send(MessagePart(embeds=[embed]))
 
 @prefixes.listen('verify')
-async def on_build_verify(bot: Client, channel: Channel):
-    event: MessageCreateEvent = channel.context
-
-    if event.author.id != OWNER_ID:
+async def on_build_verify(ctx: PrefixCommandContext):
+    if ctx.author.id != OWNER_ID:
         return
-    if event.channel_id != VERIFY_CHANNEL_ID:
+    if ctx.event.channel_id != VERIFY_CHANNEL_ID:
         return
     
-    embed = EmbedPart(
+    embed = Embed(
         title='Verify',
-        author=E.user_author(bot.bot_user),
-        thumbnail=EmbedThumbnailPart("https://raw.githubusercontent.com/scurry-works/support-squirrel/refs/heads/main/assets/plus.png"),
+        thumbnail=EmbedThumbnail("https://raw.githubusercontent.com/scurry-works/support-squirrel/refs/heads/main/assets/plus.png"),
         description="By reacting to this message, you agree to the rules."
     )
 
-    resp = await channel.send(MessagePart(embeds=[embed]))
+    embed.set_user_author(bot_user.user)
 
-    resp_msg = bot.message(resp.channel_id, resp.id)
+    await ctx.send(MessagePart(embeds=[embed]))
 
-    await resp_msg.add_reaction(guild_emojis.get_emoji(ACORN_EMOJI_ID))
+    await ctx.message.add_reaction(guild_emojis.get_emoji(ACORN_EMOJI_ID))
 
-@events.listen(EventTypes.MESSAGE_REACTION_ADD)
+@events.listen(EventType.MESSAGE_REACTION_ADD)
 async def on_verify(bot: Client, event: ReactionAddEvent):
 
     # if correct channel and emoji and NOT the bot...
@@ -136,28 +135,29 @@ async def on_verify(bot: Client, event: ReactionAddEvent):
 
     await guild.add_member_role(event.user_id, MEMBER_ROLE_ID)
 
-@events.listen(EventTypes.GUILD_MEMBER_ADD)
+@events.listen(EventType.GUILD_MEMBER_ADD)
 async def on_welcome(bot: Client, event: GuildMemberAddEvent):
     channel = bot.channel(WELCOME_CHANNEL_ID)
 
-    acorn = bot_emojis.get_emoji('acorn').mention
-    bullet = bot_emojis.get_emoji('bullet').mention
+    acorn = app_emojis.get_emoji('acorn').mention
+    bullet = app_emojis.get_emoji('bullet').mention
 
     import random
 
     select_thumb = random.choice(['bookie', 'pirate', 'wizard'])
 
-    embed = EmbedPart(
-        author=E.user_author(bot_user.user),
+    embed = Embed(
         title=f"Welcome, {event.user.username}!",
-        thumbnail=EmbedThumbnailPart(f"https://raw.githubusercontent.com/scurry-works/support-squirrel/refs/heads/main/assets/{select_thumb}.png"),
+        thumbnail=EmbedThumbnail(f"https://raw.githubusercontent.com/scurry-works/support-squirrel/refs/heads/main/assets/{select_thumb}.png"),
         description=f"""
             {bullet} Read the rules in <#1046640388456321126>
             {bullet} Verify in <#1440890196517326930>
             {bullet} Hope you enjoy the bot!
         """,
-        image=EmbedImagePart('https://raw.githubusercontent.com/scurry-works/support-squirrel/refs/heads/main/assets/welcome.gif')
+        image=EmbedImage('https://raw.githubusercontent.com/scurry-works/support-squirrel/refs/heads/main/assets/welcome.gif')
     )
+
+    embed.set_user_author(bot)
 
     await channel.send(
         MessagePart(
